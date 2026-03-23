@@ -1,0 +1,61 @@
+{
+  "realm": "far-b",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "repository-admin",
+        "description": "Can publish ledger entries and manage peers"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "repository-ui",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8082/*"
+      ],
+      "webOrigins": [
+        "+"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "carol",
+      "enabled": true,
+      "email": "carol@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "carol",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-far-b",
+        "repository-admin"
+      ]
+    },
+    {
+      "username": "dave",
+      "enabled": true,
+      "email": "dave@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dave",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-far-b"
+      ]
+    }
+  ]
+}

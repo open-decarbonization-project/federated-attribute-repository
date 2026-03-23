@@ -1,0 +1,80 @@
+quarkus:
+  application:
+    name: federated-attribute-repository
+  http:
+    port: 8081
+    limits:
+      max-body-size: 10M
+    cors:
+      ~: true
+      origins: ${REPOSITORY_CORS_ORIGINS:/.*/}
+      methods: GET,POST,PUT,DELETE,HEAD,OPTIONS
+      headers: Accept,Authorization,Content-Type,Far-Delegation-Chain,Signature,Signature-Input,Content-Digest
+      exposed-headers: Far-Resolver,Far-Namespace,Signature,Signature-Input,Content-Digest
+    header:
+      "X-Frame-Options":
+        value: DENY
+      "X-Content-Type-Options":
+        value: nosniff
+      "Referrer-Policy":
+        value: strict-origin-when-cross-origin
+      "Content-Security-Policy":
+        value: "default-src 'self'; connect-src 'self' ${repository.csp.connect}; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self' blob:; img-src 'self' blob:"
+    auth:
+      permission:
+        public:
+          paths: /v1/health,/v1/auth,/q/*,/callback,/,/v1/peers,/v1/peers/*,/v1/namespaces,/v1/resources,/v1/resources/*
+          policy: permit
+        static:
+          paths: /assets/*
+          policy: permit
+  datasource:
+    db-kind: postgresql
+  flyway:
+    migrate-at-start: true
+    locations: db/migration,db/seed/dev
+  oidc:
+    application-type: service
+  keycloak:
+    devservices:
+      port: 8180
+      realm-name: far
+      realm-path: dev-realm.json
+
+"%prod":
+  quarkus:
+    datasource:
+      jdbc:
+        url: ${DB_URL:jdbc:postgresql://localhost:5432/repository}
+      username: ${DB_USER:repository}
+      password: ${DB_PASSWORD:repository}
+    flyway:
+      locations: db/migration,db/seed/${REPOSITORY_SEED:none}
+    oidc:
+      auth-server-url: ${OIDC_AUTH_SERVER_URL}
+      token:
+        issuer: ${OIDC_TOKEN_ISSUER:}
+      tls:
+        verification: ${OIDC_TLS_VERIFICATION:required}
+    keycloak:
+      devservices:
+        enabled: false
+
+"%dev":
+  repository:
+    ssrf:
+      check: false
+
+repository:
+  identity: ${REPOSITORY_IDENTITY:https://repository.far.example.com}
+  namespaces: ${REPOSITORY_NAMESPACES:carbon,energy,iso,trade,agriculture,supply-chain,renewable-energy,ngg}
+  ssrf:
+    check: ${REPOSITORY_SSRF_CHECK:true}
+  keys:
+    id: key-1
+    directory: ${REPOSITORY_KEYS_DIR:data/keys}
+  oidc:
+    authority: ${REPOSITORY_OIDC_AUTHORITY:http://localhost:8180/realms/far}
+    client: ${REPOSITORY_OIDC_CLIENT:repository-ui}
+  csp:
+    connect: ${REPOSITORY_CSP_CONNECT:http://localhost:8180}

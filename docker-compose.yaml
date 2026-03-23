@@ -1,0 +1,150 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev --import-realm --health-enabled=true
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./docker/realm.json:/opt/keycloak/data/import/realm.json
+    ports:
+      - "8180:8080"
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q '200'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  netherlands:
+    build: .
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/repository_netherlands
+      DB_USER: ${DB_USER:-repository}
+      DB_PASSWORD: ${DB_PASSWORD:-repository}
+      OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/far
+      OIDC_TOKEN_ISSUER: http://localhost:8180/realms/far
+      OIDC_TLS_VERIFICATION: ${OIDC_TLS_VERIFICATION:-none}
+      REPOSITORY_IDENTITY: http://netherlands:8081
+      REPOSITORY_NAMESPACES: carbon,energy
+      REPOSITORY_OIDC_AUTHORITY: http://localhost:8180/realms/far
+      REPOSITORY_CORS_ORIGINS: http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085
+      REPOSITORY_SEED: netherlands
+      REPOSITORY_SSRF_CHECK: "false"
+
+  france:
+    build: .
+    ports:
+      - "8082:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/repository_france
+      DB_USER: ${DB_USER:-repository}
+      DB_PASSWORD: ${DB_PASSWORD:-repository}
+      OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/far
+      OIDC_TOKEN_ISSUER: http://localhost:8180/realms/far
+      OIDC_TLS_VERIFICATION: ${OIDC_TLS_VERIFICATION:-none}
+      REPOSITORY_IDENTITY: http://france:8081
+      REPOSITORY_NAMESPACES: agriculture,trade
+      REPOSITORY_OIDC_AUTHORITY: http://localhost:8180/realms/far
+      REPOSITORY_CORS_ORIGINS: http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085
+      REPOSITORY_SEED: france
+      REPOSITORY_SSRF_CHECK: "false"
+
+  belgium:
+    build: .
+    ports:
+      - "8083:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/repository_belgium
+      DB_USER: ${DB_USER:-repository}
+      DB_PASSWORD: ${DB_PASSWORD:-repository}
+      OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/far
+      OIDC_TOKEN_ISSUER: http://localhost:8180/realms/far
+      OIDC_TLS_VERIFICATION: ${OIDC_TLS_VERIFICATION:-none}
+      REPOSITORY_IDENTITY: http://belgium:8081
+      REPOSITORY_NAMESPACES: iso,supply-chain
+      REPOSITORY_OIDC_AUTHORITY: http://localhost:8180/realms/far
+      REPOSITORY_CORS_ORIGINS: http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085
+      REPOSITORY_SEED: belgium
+      REPOSITORY_SSRF_CHECK: "false"
+
+  spain:
+    build: .
+    ports:
+      - "8084:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/repository_spain
+      DB_USER: ${DB_USER:-repository}
+      DB_PASSWORD: ${DB_PASSWORD:-repository}
+      OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/far
+      OIDC_TOKEN_ISSUER: http://localhost:8180/realms/far
+      OIDC_TLS_VERIFICATION: ${OIDC_TLS_VERIFICATION:-none}
+      REPOSITORY_IDENTITY: http://spain:8081
+      REPOSITORY_NAMESPACES: renewable-energy
+      REPOSITORY_OIDC_AUTHORITY: http://localhost:8180/realms/far
+      REPOSITORY_CORS_ORIGINS: http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085
+      REPOSITORY_SEED: spain
+      REPOSITORY_SSRF_CHECK: "false"
+
+  cxl:
+    build: .
+    ports:
+      - "8085:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/repository_cxl
+      DB_USER: ${DB_USER:-repository}
+      DB_PASSWORD: ${DB_PASSWORD:-repository}
+      OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/far
+      OIDC_TOKEN_ISSUER: http://localhost:8180/realms/far
+      OIDC_TLS_VERIFICATION: ${OIDC_TLS_VERIFICATION:-none}
+      REPOSITORY_IDENTITY: http://cxl:8081
+      REPOSITORY_NAMESPACES: ngg
+      REPOSITORY_OIDC_AUTHORITY: http://localhost:8180/realms/far
+      REPOSITORY_CORS_ORIGINS: http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085
+      REPOSITORY_SEED: cxl
+      REPOSITORY_SSRF_CHECK: "false"

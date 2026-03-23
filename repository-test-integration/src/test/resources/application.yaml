@@ -1,0 +1,20 @@
+quarkus:
+  http:
+    port: 0
+    test-port: 0
+    auth:
+      permission:
+        public:
+          paths: /v1/health,/v1/auth,/q/*,/v1/resources,/v1/resources/*,/v1/peers,/v1/peers/*,/v1/namespaces
+          policy: permit
+  flyway:
+    migrate-at-start: true
+    locations: db/migration
+  oidc:
+    enabled: false
+
+repository:
+  identity: https://repository-test.far.example.com
+  namespaces: test
+  ssrf:
+    check: false
